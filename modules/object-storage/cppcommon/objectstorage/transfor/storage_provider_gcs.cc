@@ -35,8 +35,9 @@ absl::StatusOr<FileList> GcsStorageProvider::List(const std::string &bucket, con
   std::vector<std::string> keys;
   for (auto &&object_metadata : client_->ListObjects(bucket, gcs::Prefix(path))) {
     if (!object_metadata) {
-      std::cerr << "[GCS::List] Error: " << object_metadata.status().message() << "\n";
-      continue;
+      auto &s = object_metadata.status();
+      return absl::Status(absl::StatusCode::kInternal,
+                          absl::StrFormat("[GCS::List] %s: %s", s.error_info().reason(), s.message()));
     }
     keys.emplace_back(object_metadata->name());
   }

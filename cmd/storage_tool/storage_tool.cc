@@ -25,7 +25,6 @@
  */
 
 #include <iostream>
-#include <map>
 #include <stdexcept>
 #include <string>
 
@@ -125,10 +124,14 @@ static ServiceProvider ResolveProvider(const std::string &name) {
 // ---------------------------------------------------------------------------
 // Commands
 // ---------------------------------------------------------------------------
+static void PrintStatus(const absl::Status &s) {
+  std::cerr << "error [" << absl::StatusCodeToString(s.code()) << "]: " << s.message() << "\n";
+}
+
 static int CmdLs(std::shared_ptr<StorageProvider> provider, const Args &a) {
   auto result = provider->List(a.bucket, a.path);
   if (!result.ok()) {
-    std::cerr << "error: " << result.status().message() << "\n";
+    PrintStatus(result.status());
     return 1;
   }
   const auto &files = *result;
@@ -158,7 +161,7 @@ static int CmdDownloadFile(std::shared_ptr<StorageProvider> provider, const Args
 
   auto status = provider->DownloadFile(meta);
   if (!status.ok()) {
-    std::cerr << "error: " << status.message() << "\n";
+    PrintStatus(status);
     return 1;
   }
   std::cout << "done\n";
@@ -176,7 +179,7 @@ static int CmdDownload(std::shared_ptr<StorageProvider> provider, const Args &a)
 
   auto result = provider->Download(meta);
   if (!result.ok()) {
-    std::cerr << "error: " << result.status().message() << "\n";
+    PrintStatus(result.status());
     return 1;
   }
   const auto &downloaded = *result;
