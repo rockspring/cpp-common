@@ -30,6 +30,7 @@
 
 #include "cppcommon/objectstorage/transfor/object_transfor.h"
 #include "cppcommon/objectstorage/transfor/storage_provider.h"
+#include "spdlog/spdlog.h"
 
 using namespace cppcommon::os;
 
@@ -44,6 +45,7 @@ struct Args {
   std::string local{"."};
   bool overwrite{true};
   bool help{false};
+  bool debug{false};
 };
 
 static void PrintUsage(const char *prog) {
@@ -62,6 +64,7 @@ static void PrintUsage(const char *prog) {
             << "  --path       remote path     (required)\n"
             << "  --local      local path      (default: \".\" for download, required for download-file)\n"
             << "  --no-overwrite               skip existing local files\n"
+            << "  --debug                      enable debug logging\n"
             << "  --help\n"
             << "\n"
             << "Credentials via env vars:\n"
@@ -102,6 +105,8 @@ static Args ParseArgs(int argc, char **argv) {
       a.local = next();
     } else if (key == "--no-overwrite") {
       a.overwrite = false;
+    } else if (key == "--debug") {
+      a.debug = true;
     } else if (key == "--help" || key == "-h") {
       a.help = true;
     } else {
@@ -207,6 +212,9 @@ int main(int argc, char **argv) {
     PrintUsage(argv[0]);
     return 0;
   }
+
+  spdlog::set_level(a.debug ? spdlog::level::debug : spdlog::level::warn);
+  spdlog::set_pattern("[%H:%M:%S.%e] [%l] %v");
 
   // Validate
   if (a.command != "ls" && a.command != "download" && a.command != "download-file") {
