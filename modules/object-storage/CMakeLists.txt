@@ -23,10 +23,10 @@ set(OS_THIRD_LIBRARIES
     "$<IF:$<BOOL:${ARROW_BUILD_STATIC}>,Parquet::parquet_static,Parquet::parquet_shared>"
 )
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB_RECURSE OS_LIB_HREADERS ${CMAKE_CURRENT_SOURCE_DIR}/cppcommon/*.h)
 file(GLOB_RECURSE OS_LIB_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/cppcommon/*.cc)
 add_library(${OBJECT_STORAGE_LIB} ${OS_LIB_HREADERS} ${OS_LIB_SRCS})
+target_include_directories(${OBJECT_STORAGE_LIB} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${OBJECT_STORAGE_LIB} ${PROJECT_NAME}
                       ${OS_THIRD_LIBRARIES})
 
