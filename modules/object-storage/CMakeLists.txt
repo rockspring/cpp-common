@@ -34,6 +34,8 @@ if(BUILD_TESTING)
   add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tests)
 endif()
 
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools)
+
 # install files
 install(
   TARGETS ${OBJECT_STORAGE_LIB}
