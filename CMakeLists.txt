@@ -51,4 +51,5 @@ install(
 # submodules
 if(WITH_OBJECT_STORAGE)
   add_subdirectory(modules/object-storage)
+  add_subdirectory(cmd/storage_tool)
 endif()
