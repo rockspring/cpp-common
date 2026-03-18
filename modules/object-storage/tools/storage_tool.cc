@@ -6,14 +6,15 @@
  *   storage_tool <command> --provider <oss|s3|gcs> --bucket <bucket> --path <path> [options]
  *
  * Commands:
- *   ls        List objects under the given path
- *   download  Download objects to local directory
+ *   ls            List objects under the given path
+ *   download      Download all objects under --path to --local directory
+ *   download-file Download a single remote file to --local file path
  *
  * Options:
  *   --provider   oss | s3 | gcs  (required)
  *   --bucket     bucket name     (required)
  *   --path       remote path     (required)
- *   --local      local directory (required for download, default: current dir)
+ *   --local      local path      (required for download/download-file)
  *   --no-overwrite               skip existing local files
  *   --help
  *
@@ -37,7 +38,7 @@ using namespace cppcommon::os;
 // Tiny argument parser
 // ---------------------------------------------------------------------------
 struct Args {
-  std::string command;   // "ls" | "download"
+  std::string command;   // "ls" | "download" | "download-file"
   std::string provider;  // "oss" | "s3" | "gcs"
   std::string bucket;
   std::string path;
@@ -48,18 +49,19 @@ struct Args {
 
 static void PrintUsage(const char *prog) {
   std::cout << "Usage: " << prog
-            << " <ls|download> --provider <oss|s3|gcs> --bucket <bucket> --path <path>"
-               " [--local <dir>] [--no-overwrite]\n"
+            << " <ls|download|download-file> --provider <oss|s3|gcs> --bucket <bucket>"
+               " --path <path> [--local <path>] [--no-overwrite]\n"
             << "\n"
             << "Commands:\n"
-            << "  ls        List objects under --path\n"
-            << "  download  Download objects under --path to --local directory\n"
+            << "  ls             List objects under --path\n"
+            << "  download       Download all objects under --path to --local directory\n"
+            << "  download-file  Download a single remote file to --local file path\n"
             << "\n"
             << "Options:\n"
             << "  --provider   oss | s3 | gcs  (required)\n"
             << "  --bucket     bucket name     (required)\n"
             << "  --path       remote path     (required)\n"
-            << "  --local      local dir       (download only, default: \".\")\n"
+            << "  --local      local path      (default: \".\" for download, required for download-file)\n"
             << "  --no-overwrite               skip existing local files\n"
             << "  --help\n"
             << "\n"
@@ -141,6 +143,28 @@ static int CmdLs(std::shared_ptr<StorageProvider> provider, const Args &a) {
   return 0;
 }
 
+static int CmdDownloadFile(std::shared_ptr<StorageProvider> provider, const Args &a) {
+  if (a.local.empty() || a.local == ".") {
+    std::cerr << "error: --local must specify a destination file path for download-file\n";
+    return 1;
+  }
+  TransferMeta meta;
+  meta.bucket = a.bucket;
+  meta.remote_file_path = a.path;
+  meta.local_file_path = a.local;
+  meta.overwrite = a.overwrite;
+
+  std::cout << "downloading " << a.bucket << "/" << a.path << " -> " << a.local << " ...\n";
+
+  auto status = provider->DownloadFile(meta);
+  if (!status.ok()) {
+    std::cerr << "error: " << status.message() << "\n";
+    return 1;
+  }
+  std::cout << "done\n";
+  return 0;
+}
+
 static int CmdDownload(std::shared_ptr<StorageProvider> provider, const Args &a) {
   TransferMeta meta;
   meta.bucket = a.bucket;
@@ -182,8 +206,8 @@ int main(int argc, char **argv) {
   }
 
   // Validate
-  if (a.command != "ls" && a.command != "download") {
-    std::cerr << "error: unknown command '" << a.command << "', must be ls|download\n";
+  if (a.command != "ls" && a.command != "download" && a.command != "download-file") {
+    std::cerr << "error: unknown command '" << a.command << "', must be ls|download|download-file\n";
     PrintUsage(argv[0]);
     return 1;
   }
@@ -218,6 +242,7 @@ int main(int argc, char **argv) {
 
   if (a.command == "ls") return CmdLs(storage, a);
   if (a.command == "download") return CmdDownload(storage, a);
+  if (a.command == "download-file") return CmdDownloadFile(storage, a);
 
   return 0;
 }
